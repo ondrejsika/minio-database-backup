@@ -1,0 +1,13 @@
+version: '3.6'
+services:
+    minio_database_backup_postgres:
+        build:
+            context: .
+            dockerfile: dockerfiles/postgres/Dockerfile
+        image: ondrejsika/minio-database-backup-postgres
+
+    minio_database_backup_mysql:
+        build:
+            context: .
+            dockerfile: dockerfiles/mysql/Dockerfile
+        image: ondrejsika/minio-database-backup-mysql

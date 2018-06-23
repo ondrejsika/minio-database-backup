@@ -1,0 +1,51 @@
+#!/bin/sh
+
+DATABASE_ENGINE=$1
+PERIOD=$2
+
+MINIO_URL=$3
+MINIO_ACCESS_KEY=$4
+MINIO_SECRET_KEY=$5
+MINIO_BUCKET=$6
+
+DATABASE_HOST=$7
+DATABASE_PORT=$8
+DATABASE_USER=$9
+DATABASE_PASSWORD=$10
+DATABASE_NAME=$11
+
+
+while true
+do
+    NOW=$(date +%Y-%m-%d_%H-%M-%S)
+    LOCAL_PREFIX=/data
+    DIR=$(date +%Y-%m-%d)
+    FILE=$DIR/${DATABASE_HOST}_${DATABASE_NAME}__${NOW}.sql
+
+    mkdir -p $LOCAL_PREFIX/$DIR
+
+    case "$DATABASE_ENGINE" in
+    "postgres") 
+        PGPASSWORD=$DATABASE_PASSWORD pg_dump \
+            -h $DATABASE_HOST \
+            -p $DATABASE_PORT \
+            -U $DATABASE_USER \
+            $DATABASE_NAME > $LOCAL_PREFIX/$FILE
+        ;;
+    "mysql")
+            mysqldump \
+                -h $DATABASE_HOST \
+                -P $DATABASE_PORT \
+                -u$DATABASE_USER \
+                -p$DATABASE_PASSWORD \
+                $DATABASE_NAME > $LOCAL_PREFIX/$FILE
+        ;;
+    esac
+
+
+    mcli --insecure config host add minio $MINIO_URL $MINIO_ACCESS_KEY $MINIO_SECRET_KEY
+    mcli --insecure mb minio/$MINIO_BUCKET || true
+    mcli --insecure cp $LOCAL_PREFIX/$FILE minio/$MINIO_BUCKET/$FILE
+
+	sleep $PERIOD
+done
