@@ -1,0 +1,40 @@
+version: '3.6'
+services:
+    minio:
+        image: minio/minio
+        ports:
+            - "9000:9000"
+        environment:
+            MINIO_ACCESS_KEY: admin
+            MINIO_SECRET_KEY: asdfasdf
+        command: server /data
+
+    postgres:
+        image: postgres:10.3
+        environment:
+            - POSTGRES_PASSWORD=asdfasdf
+        volumes:
+            - ./postgres_example.sql:/docker-entrypoint-initdb.d/01_dump.sql
+
+    mysql:
+        image: mysql:8
+        environment:
+            - MYSQL_ROOT_PASSWORD=asdfasdf
+        volumes:
+            - ./mysql_example.sql:/docker-entrypoint-initdb.d/01_dump.sql
+
+    backup-postgres:
+        image: ondrejsika/minio-database-backup-postgres
+        command: |
+            minio_database_backup
+                postgres 10
+                http://minio:9000 admin asdfasdf backup-postgres
+                postgres 5432 postgres asdfasdf example
+
+    backup-mysql:
+        image: ondrejsika/minio-database-backup-mysql
+        command: |
+            minio_database_backup
+                mysql 10
+                http://minio:9000 admin asdfasdf backup-mysql
+                mysql 3306 root asdfasdf example
